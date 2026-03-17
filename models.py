@@ -1,4 +1,3 @@
-import email
 from enum import Enum
 from pydantic import BaseModel, EmailStr, field_validator
 from sqlmodel import SQLModel, Field, Relationship, Session, select
@@ -42,18 +41,17 @@ class CustomerBase(SQLModel):
     email: EmailStr
     age: int
 
+
+class CustomerCreate(CustomerBase):
     @field_validator("email")
     @classmethod
     def validate_email(cls, value):
         session = Session(engine)
-        query = select(Customer).where(Customer.email == email)
+        query = select(Customer).where(Customer.email == value)
         result = session.exec(query).first()
         if result:
             raise ValueError("This emails is alrady registered")
-
-
-class CustomerCreate(CustomerBase):
-    pass
+        return value
 
 
 class CustomerUpdate(CustomerBase):
@@ -66,6 +64,11 @@ class Customer(CustomerBase, table=True):
     plans: list[Plan] = Relationship(
         back_populates="customers", link_model=CustomerPlan
     )
+
+
+class CustomerWithPlans(CustomerBase):
+    id: int
+    plans: list[Plan] = []
 
 
 class TransactionBase(SQLModel):
@@ -81,6 +84,16 @@ class Transaction(TransactionBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
     customer_id: int = Field(foreign_key="customer.id")
     customer: Customer = Relationship(back_populates="transactions")
+
+
+class TransactionWithCustomer(TransactionBase):
+    id: int
+    customer: Customer
+
+
+class CustomerWithTransactions(CustomerBase):
+    id: int
+    transactions: list[Transaction] = []
 
 
 class Invoice(BaseModel):

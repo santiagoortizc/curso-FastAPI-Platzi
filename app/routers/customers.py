@@ -7,6 +7,7 @@ from models import (
     Customer,
     CustomerCreate,
     CustomerUpdate,
+    CustomerWithPlans,
     Plan,
     CustomerPlan,
     StatusEnum,
@@ -102,7 +103,9 @@ async def suscribe_customer_plan(
 
 @router.get("/customers/{customer_id}/plans")
 async def read_customer_plans(
-    customer_id: int, session: SessionDep, plan_status: StatusEnum = Query()
+    customer_id: int,
+    session: SessionDep,
+    plan_status: StatusEnum = Query(default=StatusEnum.ACTIVE),
 ):
     customer_db = session.get(Customer, customer_id)
 
@@ -117,3 +120,12 @@ async def read_customer_plans(
     plans = session.exec(query).all()
 
     return plans
+
+
+@router.get("/customers/{customer_id}", response_model=CustomerWithPlans)
+async def read_customer_with_plans(customer_id: int, session: SessionDep):
+    customer = session.get(Customer, customer_id)
+    if customer is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    return customer

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
 from db import SessionDep
-from models import Customer, Transaction, TransactionCreate
+from models import Customer, Transaction, TransactionCreate, TransactionWithCustomer
 from sqlmodel import select
 
 
@@ -26,6 +26,16 @@ async def create_transaction(transaction_data: TransactionCreate, session: Sessi
     session.refresh(transaction_db)
 
     return transaction_db
+
+
+@router.get(
+    "/transactions/{transaction_id}",
+    response_model=TransactionWithCustomer,
+    tags=["transactions"],
+)
+async def read_transaction(transaction_id: int, session: SessionDep):
+    transaction = session.get(Transaction, transaction_id)
+    return transaction
 
 
 @router.get("/transactions", tags=["transactions"])

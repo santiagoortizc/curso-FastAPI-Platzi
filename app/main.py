@@ -1,7 +1,8 @@
 import zoneinfo
 from datetime import datetime
+import time
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, Request, status
 from db import create_all_tables
 from app.routers import customers, invoices, transactions, plans
 
@@ -12,6 +13,22 @@ app.include_router(customers.router)
 app.include_router(invoices.router)
 app.include_router(transactions.router)
 app.include_router(plans.router)
+
+
+@app.middleware("http")
+async def log_request_headers(request: Request, call_next):
+    print(f"Headers for {request.method} {request.url.path}: {dict(request.headers)}")
+    response = await call_next(request)
+    return response
+
+
+@app.middleware("http")
+async def log_request_time(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = time.time() - start_time
+    print(f"Request processed in {process_time:.2f} seconds")
+    return response
 
 
 @app.get("/")

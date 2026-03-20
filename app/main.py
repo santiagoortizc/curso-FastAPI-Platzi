@@ -1,8 +1,11 @@
+import secrets
+from typing import Annotated
 import zoneinfo
 from datetime import datetime
 import time
 
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from db import create_all_tables
 from app.routers import customers, invoices, transactions, plans
 
@@ -31,8 +34,23 @@ async def log_request_time(request: Request, call_next):
     return response
 
 
+def verify_credentials(credentials: HTTPBasicCredentials) -> bool:
+    correct_username = secrets.compare_digest(credentials.username, "admin")
+    correct_password = secrets.compare_digest(credentials.password, "password")
+    return correct_username and correct_password
+
+
+security = HTTPBasic()
+
+
 @app.get("/")
-async def root():
+async def root(credentials: Annotated[HTTPBasicCredentials, Depends(security)]):
+    if not verify_credentials(credentials):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Credenciales inválidas",
+            headers={"WWW-Authenticate": "Basic"},  # necesario en 401
+        )
     return {"message": "Hola, Santiago!"}
 
 

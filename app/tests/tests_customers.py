@@ -3,7 +3,7 @@ from fastapi import status
 
 def test_create_customer(client):
     response = client.post(
-        "/customers", json={"name": "", "email": "jhon@example.com", "age": 30}
+        "/customers", json={"name": "John Doe", "email": "jhon@example.com", "age": 30}
     )
     assert response.status_code == status.HTTP_201_CREATED
 

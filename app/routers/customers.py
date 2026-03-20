@@ -69,12 +69,13 @@ async def update_customer(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Customer doesn't exist"
         )
-    customer_data = customer_data.model_dump(exclude_unset=True)
-    customer.sqlmodel_update(customer_data)
+    customer_data_dict = customer_data.model_dump(exclude_unset=True)
+    customer.sqlmodel_update(customer_data_dict)
 
     session.add(customer)
     session.commit()
     session.refresh(customer)
+    return customer
 
 
 @router.post("/customers/{customer_id}/plans/{plan_id}")

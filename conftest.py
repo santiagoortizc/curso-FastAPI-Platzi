@@ -1,3 +1,5 @@
+import db
+import models
 from db import get_session
 import pytest
 from fastapi.testclient import TestClient
@@ -7,20 +9,27 @@ from sqlalchemy.pool import StaticPool
 from app.main import app
 
 
-sqlite_name = "db.sqlite3"
-sqlite_url = f"sqlite:///{sqlite_name}"
-
-engine = create_engine(
-    sqlite_url, connect_args={"check_same_thread": False}, poolclass=StaticPool
-)
-
-
 @pytest.fixture(name="session")
 def session_fixture():
-    SQLModel.metadata.create_all(engine)
-    with Session(engine) as session:
+    # Usar base de datos en memoria para cada test
+    test_engine = create_engine(
+        "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
+
+    # Parchear el engine global en db.py y models.py
+    original_db_engine = db.engine
+    original_models_engine = models.engine
+    db.engine = test_engine
+    models.engine = test_engine
+
+    SQLModel.metadata.create_all(test_engine)
+    with Session(test_engine) as session:
         yield session
-    SQLModel.metadata.drop_all(engine)
+    SQLModel.metadata.drop_all(test_engine)
+
+    # Restaurar engines originales
+    db.engine = original_db_engine
+    models.engine = original_models_engine
 
 
 @pytest.fixture(name="client")
